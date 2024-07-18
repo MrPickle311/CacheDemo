@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: DataProvider
+
+  data:
+    redis:
+      database: 0
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          redis: DEBUG
+    io:
+      lettuce:
+        core: DEBUG
