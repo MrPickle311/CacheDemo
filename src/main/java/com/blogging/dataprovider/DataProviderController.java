@@ -2,20 +2,18 @@ package com.blogging.dataprovider;
 
 import lombok.SneakyThrows;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.data.repository.query.Param;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/blog-cache")
 public class DataProviderController {
 
-    @Cacheable(value = "userCache", key = "#userId")
+    @Cacheable(value = "userCache",
+            keyGenerator = "customKeyGenerator")
     @GetMapping("/users/{userId}")
     @SneakyThrows
     public User getUser(@PathVariable String userId) {
@@ -23,30 +21,29 @@ public class DataProviderController {
         return new User(userId, "User " + userId, "user" + userId + "@example.com");
     }
 
-    @Cacheable(value = "productCache",
+    @Cacheable(value = "userCache",
             keyGenerator = "customKeyGenerator")
-    @GetMapping("/products")
+    @GetMapping("/userCache/map")
     @SneakyThrows
-    public Map<String, Product> getProduct(@RequestParam("productIds") List<String> productIds) {
+    public Map<String, User> getProduct(@RequestParam("userIds") List<String> userIds) {
         simulateDatabaseFetch();
-        return productIds.stream().map(id ->
-                        Map.entry(id, new Product(id, "Product " + id, 99.99, "Electronics")))
+        return userIds.stream().map(id ->
+                        Map.entry(id, new User(id, "A name" + id, "abc@gm.com")))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    @Cacheable(value = "userCache",
+            keyGenerator = "customKeyGenerator")
+    @GetMapping("/users/activities/list")
+    @SneakyThrows
+    public List<User> getUserActivities(@RequestParam("userIds") List<String> userIds) {
+        simulateDatabaseFetch();
+        return userIds.stream()
+                .map(id -> new User(id, "A name" + id, "abc@gm.com"))
+                .toList();
     }
 
     private static void simulateDatabaseFetch() throws InterruptedException {
         Thread.sleep(2000);
-    }
-
-    @Cacheable(value = "recentActivities", key = "#userId")
-    @GetMapping("/users/{userId}/activities")
-    @SneakyThrows
-    public List<Activity> getUserActivities(@PathVariable String userId) {
-        simulateDatabaseFetch();
-        return Arrays.asList(
-                new Activity(userId, "Logged in", LocalDateTime.now().minusHours(2)),
-                new Activity(userId, "Updated profile", LocalDateTime.now().minusHours(1)),
-                new Activity(userId, "Made a purchase", LocalDateTime.now())
-        );
     }
 }
