@@ -32,11 +32,6 @@ public class CacheConfig {
         return RedisCacheManager.builder(cacheWriter).cacheDefaults(config).build();
     }
 
-    @Bean
-    public RedisSerializer<Object> redisSerializer(ObjectMapper objectMapper) {
-        return new GenericJackson2JsonRedisSerializer(objectMapper);
-    }
-
     @Bean("customKeyGenerator")
     public KeyGenerator customKeyGenerator(){
         return new CustomCacheKeyGenerator();
