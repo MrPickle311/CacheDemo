@@ -25,36 +25,26 @@ public class CacheConfig {
     public RedisCacheManager cacheManager(final RedisConnectionFactory connectionFactory,
                                           final RedisTemplate<String, Object> redisTemplate,
                                           final ObjectMapper objectMapper) {
-        var serializationMapper = createSerializationMapper(objectMapper);
+        ObjectMapper serializationMapper = objectMapper.copy()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
+                        ObjectMapper.DefaultTyping.EVERYTHING,
+                        JsonTypeInfo.As.PROPERTY);
 
-        CustomRedisCacheWriter cacheWriter = createCustomCacheWriter(connectionFactory, redisTemplate, serializationMapper);
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(serializationMapper);
+
+        CustomRedisCacheWriter cacheWriter = new CustomRedisCacheWriter(connectionFactory, redisTemplate, serializer);
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .serializeValuesWith(RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer(serializationMapper)))
-                .entryTtl(Duration.ofMinutes(1));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
         return RedisCacheManager.builder(cacheWriter)
                 .cacheDefaults(config)
                 .build();
     }
 
-    private static CustomRedisCacheWriter createCustomCacheWriter(final RedisConnectionFactory connectionFactory,
-                                                                  final RedisTemplate<String, Object> redisTemplate,
-                                                                  final ObjectMapper serializationMapper) {
-        return new CustomRedisCacheWriter(connectionFactory,
-                redisTemplate, new GenericJackson2JsonRedisSerializer(serializationMapper));
-    }
-
-    private static ObjectMapper createSerializationMapper(final ObjectMapper objectMapper) {
-        var serializationMapper = objectMapper.copy();
-        serializationMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        serializationMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.EVERYTHING,
-                JsonTypeInfo.As.PROPERTY);
-        return serializationMapper;
-    }
-
-    @Bean("customKeyGenerator")
-    public KeyGenerator customKeyGenerator(){
+    @Bean
+    public KeyGenerator customKeyGenerator() {
         return new CustomCacheKeyGenerator();
     }
 
