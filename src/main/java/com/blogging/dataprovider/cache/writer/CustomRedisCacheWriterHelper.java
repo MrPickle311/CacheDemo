@@ -30,7 +30,7 @@ public class CustomRedisCacheWriterHelper {
 
     void putSingle(String key, Object value) {
         List<String> ids = extractIds(key);
-        redisTemplate.opsForHash().put(key, ids.get(0), value);
+        redisTemplate.opsForHash().put(key, ids.getFirst(), value);
     }
 
     Map<String, Object> createResultMap(List<String> ids, List<Object> redisResult) {

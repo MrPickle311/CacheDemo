@@ -53,7 +53,7 @@ public class CustomRedisCacheWriter implements RedisCacheWriter {
         return switch (valueType) {
             case "map" -> serializer.serialize(helper.createResultMap(ids, redisResult));
             case "list" -> serializer.serialize(redisResult);
-            case "obj" -> serializer.serialize(redisResult.get(0));
+            case "obj" -> serializer.serialize(redisResult.getFirst());
             default -> throw new IllegalArgumentException("Unsupported value type: " + valueType);
         };
     }
