@@ -13,14 +13,17 @@ public class CustomCacheKeyGenerator implements KeyGenerator {
     @Override
     public Object generate(Object target, Method method, Object... params) {
         StringBuilder keyBuilder = new StringBuilder();
-
         createKeyPrefix(target, keyBuilder, method);
 
-        if(params.length == 1 && params[0] instanceof Collection ids){
+        if (params.length != 1) {
+            throw new IllegalArgumentException("Single parameter required");
+        }
+
+        if(params[0] instanceof Collection ids){
             return getKeyForListOfParams(ids, keyBuilder);
         }
 
-        if(params.length == 1 && params[0] instanceof String id){
+        if(params[0] instanceof String id){
             return getKeyForSingleParam(id, keyBuilder);
         }
 
@@ -32,9 +35,7 @@ public class CustomCacheKeyGenerator implements KeyGenerator {
                                         Method method) {
         keyBuilder
                 .append(target.getClass().getName())
-                .append(":")
-                .append("{cacheName}")
-                .append(":")
+                .append(":{cacheName}:")
                 .append(getTypeMetadataFromReturnType(method))
                 .append(":");
     }
