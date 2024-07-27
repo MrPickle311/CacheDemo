@@ -14,23 +14,28 @@ public class CustomRedisCacheWriterHelper {
     private final RedisTemplate<String, Object> redisTemplate;
 
     String processKey(String name, byte[] key) {
-        String stringKey = new String(key).replace("{cacheName}", name);
-        return removeLastMetadata(removeLastMetadata(stringKey));
+        return new String(key).replace("{cacheName}", name);
     }
 
-    void putList(String key, List<?> list) {
-        List<String> ids = extractIds(key);
+    void putList(String name, byte[] key, final List<?> list) {
+        String stringKey = processKey(name, key);
+        List<String> ids = extractIds(stringKey);
+        final var trimmedKey = removeLastMetadata(stringKey, 2);
         IntStream.range(0, list.size())
-                .forEach(i -> redisTemplate.opsForHash().put(key, ids.get(i), list.get(i)));
+                .forEach(i -> redisTemplate.opsForHash().put(trimmedKey, ids.get(i), list.get(i)));
     }
 
-    void putMap(String key, Map<?, ?> map) {
-        redisTemplate.opsForHash().putAll(key, map);
+    void putMap(String name, byte[] key, final Map<?, ?> map) {
+        String stringKey = processKey(name, key);
+        stringKey = removeLastMetadata(stringKey, 2);
+        redisTemplate.opsForHash().putAll(stringKey, map);
     }
 
-    void putSingle(String key, Object value) {
-        List<String> ids = extractIds(key);
-        redisTemplate.opsForHash().put(key, ids.getFirst(), value);
+    void putSingle(String name, byte[] key, final Object value) {
+        String stringKey = processKey(name, key);
+        List<String> ids = extractIds(stringKey);
+        stringKey = removeLastMetadata(stringKey, 2);
+        redisTemplate.opsForHash().put(stringKey, ids.getFirst(), value);
     }
 
     Map<String, Object> createResultMap(List<String> ids, List<Object> redisResult) {
@@ -56,9 +61,15 @@ public class CustomRedisCacheWriterHelper {
         return redisResult;
     }
 
-    private static String removeLastMetadata(String input) {
-        int lastColonIndex = input.lastIndexOf(":");
-        return input.substring(0, lastColonIndex);
+    static String removeLastMetadata(String input, int iterationsCount) {
+        var result = input;
+
+        for (int i = 0; i < iterationsCount; i++) {
+            int lastColonIndex = result.lastIndexOf(":");
+            result = result.substring(0, lastColonIndex);
+        }
+
+        return result;
     }
 
     static String extractValueType(String stringKey) {

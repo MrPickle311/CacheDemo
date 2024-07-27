@@ -1,5 +1,6 @@
 package com.blogging.dataprovider.cache;
 
+import com.blogging.dataprovider.cache.writer.CustomRedisCacheWriter;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

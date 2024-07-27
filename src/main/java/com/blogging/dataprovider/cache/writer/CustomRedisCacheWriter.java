@@ -28,22 +28,23 @@ public class CustomRedisCacheWriter implements RedisCacheWriter {
 
     @Override
     public void put(String name, byte[] key, byte[] value, Duration ttl) {
-        String stringKey = helper.processKey(name, key);
         Object deserializedValue = serializer.deserialize(value);
 
         switch (deserializedValue) {
-            case Map<?, ?> map -> helper.putMap(stringKey, map);
-            case List<?> list -> helper.putList(stringKey, list);
+            case Map<?, ?> map -> helper.putMap(name, key, map);
+            case List<?> list -> helper.putList(name, key, list);
             case null -> throw new IllegalArgumentException("Serialization produced null value");
-            default -> helper.putSingle(stringKey, deserializedValue);
+            default -> helper.putSingle(name, key, deserializedValue);
         }
     }
 
     @Override
     public byte[] get(String name, byte[] key) {
         String stringKey = helper.processKey(name, key);
-        String valueType = CustomRedisCacheWriterHelper.extractValueType(stringKey);
         List<String> ids = CustomRedisCacheWriterHelper.extractIds(stringKey);
+        stringKey = CustomRedisCacheWriterHelper.removeLastMetadata(stringKey, 1);
+        String valueType = CustomRedisCacheWriterHelper.extractValueType(stringKey);
+        stringKey = CustomRedisCacheWriterHelper.removeLastMetadata(stringKey, 1);
 
         List<Object> redisResult = helper.fetchFromRedis(stringKey, ids);
         if (redisResult == null) {
